@@ -70,6 +70,59 @@ class UserResource(Resource):
 
         users = User.query.all()
         return {"users": [user.to_dict() for user in users]}, 200
+    
+class WorkoutPlanResource(Resource):
+    def post(self):
+        data = request.get_json()
+        new_plan = WorkoutPlan(
+            title=data['title'],
+            description=data.get('description'),
+            duration=data['duration'],
+            start_date=data['start_date'],
+            end_date=data['end_date']
+        )
+        db.session.add(new_plan)
+        db.session.commit()
+        return new_plan.to_dict(), 201
+
+    def get(self, plan_id=None):
+        if plan_id:
+            plan = WorkoutPlan.query.get(plan_id)
+            if plan:
+                return plan.to_dict(), 200
+            return {"error": "Plan not found"}, 404
+        
+        plans = WorkoutPlan.query.all()
+        return [plan.to_dict() for plan in plans], 200
+
+    def patch(self, plan_id):
+        plan = WorkoutPlan.query.get(plan_id)
+        if not plan:
+            return {"error": "Plan not found"}, 404
+        
+        data = request.get_json()
+        if 'title' in data:
+            plan.title = data['title']
+        if 'description' in data:
+            plan.description = data['description']
+        if 'duration' in data:
+            plan.duration = data['duration']
+        if 'start_date' in data:
+            plan.start_date = data['start_date']
+        if 'end_date' in data:
+            plan.end_date = data['end_date']
+
+        db.session.commit()
+        return {"message": "Plan updated"}, 200
+
+    def delete(self, plan_id):
+        plan = WorkoutPlan.query.get(plan_id)
+        if not plan:
+            return {"error": "Plan not found"}, 404
+
+        db.session.delete(plan)
+        db.session.commit()
+        return {"message": "Plan deleted"}, 200
 
 
 if __name__ == '__main__':
