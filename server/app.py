@@ -123,6 +123,12 @@ class WorkoutPlanResource(Resource):
         db.session.delete(plan)
         db.session.commit()
         return {"message": "Plan deleted"}, 200
+    
+api.add_resource(Register, '/register')
+api.add_resource(Login, '/login')
+api.add_resource(Logout, '/logout')
+api.add_resource(UserResource, '/users', '/users/<int:user_id>')
+api.add_resource(WorkoutPlanResource, '/workout_plans', '/workout_plans/<int:plan_id>')
 
 
 if __name__ == '__main__':
