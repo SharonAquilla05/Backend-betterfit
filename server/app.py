@@ -6,6 +6,8 @@ from flask_cors import CORS
 from flask_restful import Api, Resource
 from dotenv import load_dotenv
 import os
+from cryptography.fernet import Fernet
+
 from models import db, User, WorkoutPlan, NutritionPlan, ProgressTracking
 
 load_dotenv()
@@ -21,6 +23,19 @@ bcrypt = Bcrypt(app)
 migrate = Migrate(app, db)
 CORS(app, supports_credentials=True)
 api = Api(app) 
+
+encryption_key = os.getenv('ENCRYPTION_KEY')
+if not encryption_key:
+    encryption_key = Fernet.generate_key().decode()
+    with open('.env', 'a') as f:
+        f.write(f'\nENCRYPTION_KEY={encryption_key}\n')
+cipher = Fernet(encryption_key.encode())
+
+def encrypt(data):
+    return cipher.encrypt(data.encode()).decode()
+
+def decrypt(data):
+    return cipher.decrypt(data.encode()).decode()
 
 class Register(Resource):
     def post(self):
@@ -39,11 +54,19 @@ class Register(Resource):
             return {"error": "Email already exists"}, 400
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, email=email, password=hashed_password, age=age, nationality=nationality, description=description, hobbies=hobbies)
+        new_user = User(
+            username=username, 
+            email=email, 
+            password=hashed_password, 
+            age=age, 
+            nationality=encrypt(nationality) if nationality else None,
+            description=encrypt(description) if description else None,
+            hobbies=encrypt(hobbies) if hobbies else None
+        )
         db.session.add(new_user)
         db.session.commit()
         return new_user.to_dict(), 201
-    
+
 class Login(Resource):
     def post(self):
         email = request.json.get("email")
@@ -75,8 +98,8 @@ class WorkoutPlanResource(Resource):
     def post(self):
         data = request.get_json()
         new_plan = WorkoutPlan(
-            title=data['title'],
-            description=data.get('description'),
+            title=encrypt(data['title']),
+            description=encrypt(data['description']) if data.get('description') else None,
             duration=data['duration'],
             start_date=data['start_date'],
             end_date=data['end_date']

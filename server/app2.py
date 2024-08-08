@@ -17,6 +17,7 @@ migrate = Migrate(app, db)
 api = Api(app)
 CORS(app)
 
+
 # Generate or load encryption key
 encryption_key = os.getenv('ENCRYPTION_KEY')
 if not encryption_key:
